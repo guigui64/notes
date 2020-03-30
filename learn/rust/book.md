@@ -470,7 +470,7 @@ let s = format!("{}-{}-{}", s1, s2, s3);
 for c in "नमस्ते".chars() {
     println!("{}", c);
 }
-// will print न म स ्त े
+// will print न म स ्  त े  .
 for b in "नमस्ते".bytes() {
     println!("{}", b);
 }
@@ -759,3 +759,102 @@ fn longest_with_an_announcement<'a, T>(x: &'a str, y: &'a str, ann: T) -> &'a st
     }
 }
 ```
+
+# Testing
+
+At its simplest, a test in Rust is a function that’s annotated with the `test` attribute.
+
+```rust
+#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle {
+    fn can_hold(&self, other: &Rectangle) -> bool {
+        self.width > other.width && self.height > other.height
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn larger_can_hold_smaller() {
+        let larger = Rectangle { width: 8, height: 7 };
+        let smaller = Rectangle { width: 5, height: 1 };
+
+        assert!(larger.can_hold(&smaller));
+    }
+}
+```
+
+Testing macros are `assert!(bool)`, `assert_eq!(a, b)`, `assert_ne!` ...
+
+Adding a custom failure message can be done with `assert!(condition, message)`
+or even `assert!(conditon, string_message_format, ...values)`:
+
+```rust
+let result = greeting("Carol");
+assert!(
+    result.contains("Carol"),
+    "Greeting did not contain name, value was `{}`", result
+);
+```
+
+To assert a call panics, use the attribute `should_panic`:
+
+```rust
+pub struct Guess {
+    value: i32,
+}
+
+impl Guess {
+    pub fn new(value: i32) -> Guess {
+        if value < 1 || value > 100 {
+            panic!("Guess value must be between 1 and 100, got {}.", value);
+        }
+
+        Guess {
+            value
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "Guess value must be less than or equal to 100")]
+    fn greater_than_100() {
+        Guess::new(200);
+    }
+}
+```
+
+A test function could also return a `Result<T, E>`:
+
+```rust
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() -> Result<(), String> {
+        if 2 + 2 == 4 {
+            Ok(())
+        } else {
+            Err(String::from("two plus two does not equal four"))
+        }
+    }
+}
+```
+
+# Golden rules
+
+## Separation of Concerns for Binary Projects
+
+* Split your program into a *main.rs* and a *lib.rs* and move your program’s logic to *lib.rs*.
+* As long as your command line parsing logic is small, it can remain in *main.rs*.
+* When the command line parsing logic starts getting complicated, extract it from *main.rs* and move it to *lib.rs*.
